@@ -1,4 +1,10 @@
 package com.concurrent.reentrantlock;
+
+/**
+ * ReentrantLock复制来
+ * ReentrantLock()默认是非公平锁 ,  new ReentrantLock(true) 这样则为公平锁
+ */
+
 /*
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
@@ -36,7 +42,6 @@ package com.concurrent.reentrantlock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.Collection;
-import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
@@ -116,7 +121,7 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
-    abstract static class Sync extends AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedSynchronizer01 {
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**
@@ -138,6 +143,7 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
                     return true;
                 }
             }
+            // 重入情况
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0) // overflow
@@ -157,7 +163,7 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
                 free = true;
                 setExclusiveOwnerThread(null);
             }
-            setState(c);
+            setState(c);   // 状态更新
             return free;
         }
 
@@ -197,6 +203,7 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
 
     /**
      * Sync object for non-fair locks
+     * 非公平锁
      */
     static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
@@ -204,7 +211,10 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
         /**
          * Performs lock.  Try immediate barge, backing up to normal
          * acquire on failure.
-         * 非公平锁
+         *
+         * 非公平锁先尝试修改状态（抢一下），
+         * 成功： 修改exclusiveOwnerThread为当前前程
+         * 失败： acquire
          */
         final void lock() {
             if (compareAndSetState(0, 1))
@@ -697,9 +707,9 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
     public boolean hasWaiters(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedSynchronizer01.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.hasWaiters((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.hasWaiters((AbstractQueuedSynchronizer01.ConditionObject)condition);
     }
 
     /**
@@ -720,9 +730,9 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
     public int getWaitQueueLength(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedSynchronizer01.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitQueueLength((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitQueueLength((AbstractQueuedSynchronizer01.ConditionObject)condition);
     }
 
     /**
@@ -745,9 +755,9 @@ public class ReentrantLock01 implements Lock, java.io.Serializable {
     protected Collection<Thread> getWaitingThreads(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof AbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof AbstractQueuedSynchronizer01.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitingThreads((AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitingThreads((AbstractQueuedSynchronizer01.ConditionObject)condition);
     }
 
     /**

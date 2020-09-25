@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * lamdba 表达式
+ * lamdba 表达式(stream的是使用)
  */
 public class LamdbaTest {
 
