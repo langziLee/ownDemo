@@ -397,17 +397,26 @@ public class ReentrantReadWriteLock01
              */
             Thread current = Thread.currentThread();
             int c = getState();
-            int w = exclusiveCount(c);
-            if (c != 0) {
+            int w = exclusiveCount(c);   // 获取写锁标志数  （后16位）
+            if (c != 0) {  // 当前线程被锁了
+                // 1、w == 0 表示不是写锁，那一定只是读锁, 读写锁不支持升级， 直接返回false
+                // 2、current != getExclusiveOwnerThread() 如果不是当前线程也直接返回false
                 // (Note: if c != 0 and w == 0 then shared count != 0)
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
+                // 判断重入次数是否大于最大长度了
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
                 setState(c + acquires);
                 return true;
             }
+
+            // writerShouldBlock
+            // 1、如果是公平锁， 可能返回 true false
+            // 1.1、false 队列中没有阻塞线程、队列中有阻塞线程并且head的下个节点是当前线程
+            // 1.2、true  队列中有阻塞线程并且head的下个节点不是当前线程
+            // 2、如果是非公平锁， 直接返回false
             if (writerShouldBlock() ||
                     !compareAndSetState(c, c + acquires))
                 return false;
@@ -469,21 +478,40 @@ public class ReentrantReadWriteLock01
              */
             Thread current = Thread.currentThread();
             int c = getState();
+
+
+            // exclusiveCount获取写锁标志数  （后16位）
+            // 如果存在写锁，并且不是当前线程（降级） 则返回为-1
             if (exclusiveCount(c) != 0 &&
                     getExclusiveOwnerThread() != current)
                 return -1;
+            // 得到读锁的上锁次数
             int r = sharedCount(c);
+
+            // readerShouldBlock
+            // 1、如果是公平锁， 可能返回 true false
+            // 1.1、false 队列中没有阻塞线程、队列中有阻塞线程并且head的下个节点是当前线程
+            // 1.2、true  队列中有阻塞线程并且head的下个节点不是当前线程
+            // 2、如果是非公平锁， 可能返回 true false
+            // 2.1 false 队列中没有节点、head节点的下个节点是null、head节点的下个节点是共享节点、head节点的下个节点的线程元素是null
+            // 2.2 true  2.1取反
             if (!readerShouldBlock() &&
                     r < MAX_COUNT &&
                     compareAndSetState(c, c + SHARED_UNIT)) {
+                // r == 0 表示当前锁对象第一次加读锁
                 if (r == 0) {
-                    firstReader = current;
+                    firstReader = current;   // firstReader主要存第一个线程
                     firstReaderHoldCount = 1;
+                    // 当前线程还是第一个线程则firstReaderHoldCount++
                 } else if (firstReader == current) {
                     firstReaderHoldCount++;
+                    // 不是第一次加锁，也不是第一个加锁线程，则进入下面
                 } else {
+                    // cachedHoldCounter存储当前线程的
+                    // （如果再次是当前线程进来直接取cachedHoldCounter变量进行++,无需从ThreadLocalMap中获取）
                     HoldCounter rh = cachedHoldCounter;
                     if (rh == null || rh.tid != getThreadId(current))
+                        // readHolds继承了ThreadLocal  rh在cachedHoldCounter存储， 也在ThreadLocalMap中存储
                         cachedHoldCounter = rh = readHolds.get();
                     else if (rh.count == 0)
                         readHolds.set(rh);
@@ -508,6 +536,9 @@ public class ReentrantReadWriteLock01
             HoldCounter rh = null;
             for (;;) {
                 int c = getState();
+
+                // exclusiveCount 获取写锁标志数 不为0，则表示存在写锁
+                // getExclusiveOwnerThread() != current 如果还不是当前线程，则返回-1
                 if (exclusiveCount(c) != 0) {
                     if (getExclusiveOwnerThread() != current)
                         return -1;

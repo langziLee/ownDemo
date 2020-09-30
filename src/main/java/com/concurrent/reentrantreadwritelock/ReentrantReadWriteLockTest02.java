@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  *  ReentrantReadWrite
@@ -12,7 +13,7 @@ import java.util.concurrent.locks.Lock;
 @Slf4j(topic = "learn")
 public class ReentrantReadWriteLockTest02 {
     //读写锁
-    static ReentrantReadWriteLock01 rwl = new ReentrantReadWriteLock01();
+    static ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
     static Lock r = rwl.readLock();
     static Lock w = rwl.writeLock();

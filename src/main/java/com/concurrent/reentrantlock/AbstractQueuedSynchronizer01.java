@@ -734,7 +734,7 @@ public abstract class AbstractQueuedSynchronizer01
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
                 (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
-            if (s == null || s.isShared())
+            if (s == null || s.isShared()) // 如果head节点的下个节点是shard, 则继续唤醒下个节点
                 doReleaseShared();
         }
     }
@@ -963,7 +963,7 @@ public abstract class AbstractQueuedSynchronizer01
             for (;;) {
                 final Node p = node.predecessor();
                 if (p == head) {
-                    int r = tryAcquireShared(arg);
+                    int r = tryAcquireShared(arg); // 返回1 则表示不需要排队  -1 则表示需要排队
                     if (r >= 0) {
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
